@@ -9,78 +9,43 @@ const dbName = 'comp3123_assignment1';
 
 app.use(express.json());
 
-const hashPassword = (password) => {
-  return crypto.createHash('sha256').update(password).digest('hex');
-};
+const hashPassword = (password) =>
+  crypto.createHash('sha256').update(password).digest('hex');
 
-// Cache for serverless
+// Serverless connection cache for Vercel
+let cachedClient = null;
 let cachedDb = null;
-let isInitialized = false;
 
-async function connectToDatabase() {
+async function getDb() {
   if (cachedDb) return cachedDb;
-  
-  try {
-    console.log('Attempting MongoDB connection...');
-    
-    // Updated connection options for MongoDB Atlas with Vercel
-    const options = {
+  if (!cachedClient) {
+    cachedClient = await MongoClient.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      tls: true,
-      tlsAllowInvalidCertificates: false,
       retryWrites: true,
       w: 'majority'
-    };
-
-    const client = await MongoClient.connect(MONGODB_URI, options);
-    cachedDb = client.db(dbName);
-    console.log('MongoDB connected successfully');
-    return cachedDb;
-  } catch (error) {
-    console.error('MongoDB Connection Error:', error);
-    throw error;
-  }
-}
-
-// Initialize routes once
-async function initializeRoutes() {
-  if (isInitialized) return;
-  
-  try {
-    console.log('Initializing routes...');
-    const db = await connectToDatabase();
-    
-    // Load routes AFTER database connection
-    require('../routes/userRoutes')(app, db, hashPassword, body, validationResult);
-    require('../routes/employeeRoutes')(app, db, ObjectId, body, validationResult);
-    
-    isInitialized = true;
-    console.log('Routes initialized successfully');
-  } catch (error) {
-    console.error('Route Initialization Error:', error);
-    throw error;
-  }
-}
-
-// Root route
-app.get('/', (req, res) => {
-  res.json({ message: 'Employee Management API', status: true });
-});
-
-// Middleware to ensure routes are initialized before handling requests
-app.use(async (req, res, next) => {
-  try {
-    await initializeRoutes();
-    next();
-  } catch (error) {
-    console.error('Middleware Error:', error);
-    res.status(500).json({
-      status: false,
-      message: 'Server initialization error',
-      error: error.message
     });
   }
+  cachedDb = cachedClient.db(dbName);
+  return cachedDb;
+}
+
+// Middleware to attach DB and load routes
+app.use(async (req, res, next) => {
+  try {
+    const db = await getDb();
+    req.db = db;
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Database Connection Error', details: err.message });
+  }
 });
+
+// Import routes inside HTTP handler to ensure DB is available
+require('../routes/userRoutes')(app, null, hashPassword, body, validationResult);
+require('../routes/employeeRoutes')(app, null, ObjectId, body, validationResult);
+
+app.get('/', (req, res) =>
+  res.json({ message: 'Employee Management API', status: true })
+);
 
 module.exports = app;

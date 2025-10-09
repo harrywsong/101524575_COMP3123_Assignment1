@@ -23,13 +23,14 @@ async function connectToDatabase() {
   try {
     console.log('Attempting MongoDB connection...');
     
-    // Connection options for MongoDB v5.x with Vercel compatibility
+    // Updated connection options for MongoDB Atlas with Vercel
     const options = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
-      family: 4, // Force IPv4 to avoid IPv6 issues
+      tls: true,
+      tlsAllowInvalidCertificates: false,
+      retryWrites: true,
+      w: 'majority'
     };
 
     const client = await MongoClient.connect(MONGODB_URI, options);

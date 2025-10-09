@@ -15,6 +15,7 @@ const hashPassword = (password) => {
 
 // Cache for serverless
 let cachedDb = null;
+let isInitialized = false;
 
 async function connectToDatabase() {
   if (cachedDb) return cachedDb;
@@ -23,15 +24,28 @@ async function connectToDatabase() {
   return cachedDb;
 }
 
-// Connect and setup routes
-connectToDatabase().then(db => {
-  // Load your existing routes - EXACTLY as they are
+// Initialize routes once
+async function initializeRoutes() {
+  if (isInitialized) return;
+  
+  const db = await connectToDatabase();
+  
+  // Load routes AFTER database connection
   require('../routes/userRoutes')(app, db, hashPassword, body, validationResult);
   require('../routes/employeeRoutes')(app, db, ObjectId, body, validationResult);
-});
+  
+  isInitialized = true;
+}
 
+// Root route
 app.get('/', (req, res) => {
   res.json({ message: 'Employee Management API', status: true });
+});
+
+// Middleware to ensure routes are initialized before handling requests
+app.use(async (req, res, next) => {
+  await initializeRoutes();
+  next();
 });
 
 module.exports = app;

@@ -6,7 +6,7 @@ const { body, validationResult } = require('express-validator');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = 1234;
+const PORT = 3000;
 
 const url = 'mongodb://localhost:27017';
 // used later to show collections

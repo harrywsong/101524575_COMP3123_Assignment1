@@ -157,6 +157,40 @@ module.exports = (app, db, ObjectId, body, validationResult) => {
     }
   });
 
+  // ASSIGNMENT 2 - ADDED ENDPOINT
+  // GET method to search employees by department or position
+app.get('/api/v1/emp/employees/search', async (req, res) => {
+  try {
+    // Get query parameters
+    const { department, position } = req.query;
+    
+    // Get the employees collection from the database (use req.db for serverless or db for local)
+    const employeesCollection = (req.db || db).collection('employees');
+    
+    // Build query object
+    const query = {};
+    if (department) {
+      query.department = department;
+    }
+    if (position) {
+      query.position = position;
+    }
+    
+    // If no search criteria provided, return all employees
+    // Otherwise, search based on provided criteria
+    const employees = await employeesCollection.find(query).toArray();
+    
+    // Return the search results
+    res.status(200).json(employees);
+  } catch (error) {
+    console.error('Search Error:', error);
+    res.status(500).json({
+      status: false,
+      message: 'Server error'
+    });
+  }
+});
+
   // PUT method to update an employee by ID
   app.put('/api/v1/emp/employees/:eid', async (req, res) => {
       try {

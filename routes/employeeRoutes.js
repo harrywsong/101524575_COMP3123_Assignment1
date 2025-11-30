@@ -18,7 +18,8 @@ module.exports = (app, db, ObjectId, body, validationResult) => {
         position: emp.position,
         salary: emp.salary,
         date_of_joining: emp.date_of_joining,
-        department: emp.department
+        department: emp.department,
+        profile_picture: emp.profile_picture || null
       }));
 
       // sends the formatted employees data as a JSON response with a status code of 200 if successful
@@ -92,8 +93,8 @@ module.exports = (app, db, ObjectId, body, validationResult) => {
         });
       }
 
-      // gets the first name, last name, email, position, salary, date of joining, and department from the request body
-      const { first_name, last_name, email, position, salary, date_of_joining, department } = req.body;
+      // gets the first name, last name, email, position, salary, date of joining, department, and profile_picture from the request body
+      const { first_name, last_name, email, position, salary, date_of_joining, department, profile_picture } = req.body;
       // gets the employees collection from the database (use req.db for serverless or db for local)
       const employeesCollection = (req.db || db).collection('employees');
 
@@ -116,6 +117,7 @@ module.exports = (app, db, ObjectId, body, validationResult) => {
         salary: Number(salary),
         date_of_joining: new Date(date_of_joining),
         department,
+        profile_picture: profile_picture || null,
         created_at: new Date(),
         updated_at: new Date()
       };
@@ -175,7 +177,8 @@ module.exports = (app, db, ObjectId, body, validationResult) => {
         position: employee.position,
         salary: employee.salary,
         date_of_joining: employee.date_of_joining,
-        department: employee.department
+        department: employee.department,
+        profile_picture: employee.profile_picture || null
       };
 
       // if nothing goes wrong, returns a 200 status response with the formatted employee data
